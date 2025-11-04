@@ -1,0 +1,97 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="card">
+  <h2>Scan Results</h2>
+
+  {% if results.verdict %}
+    {% set v = results.verdict %}
+    <div class="verdict {{ v.level }}">
+      <strong>{{ v.label }}</strong>
+      {% if v.reasons %}
+        <ul>
+          {% for r in v.reasons %}<li>{{ r }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <h3>File</h3>
+  <table class="kv">
+    <tr><th>Name</th><td>{{ results.metadata.filename }}</td></tr>
+    <tr><th>Size (bytes)</th><td>{{ results.metadata.size_bytes }}</td></tr>
+    <tr><th>Extension</th><td>{{ results.metadata.extension }}</td></tr>
+    <tr><th>MIME</th><td>{{ results.metadata.mime }}</td></tr>
+  </table>
+
+  {% if results.counts %}
+  <h3>Detections</h3>
+  <table class="kv">
+    <tr><th>Total detected (ClamAV + VirusTotal)</th><td>{{ results.counts.total_detected }}</td></tr>
+    <tr><th>VirusTotal malicious</th><td>{{ results.counts.virustotal_malicious }}</td></tr>
+    <tr><th>ClamAV detections</th><td>{{ results.counts.clamav_detections }}</td></tr>
+  </table>
+  {% endif %}
+
+  <h3>Hashes</h3>
+  <table class="kv">
+    <tr><th>SHA-256</th><td><code>{{ results.hashes.sha256 }}</code></td></tr>
+    <tr><th>SHA-1</th><td><code>{{ results.hashes.sha1 }}</code></td></tr>
+    <tr><th>MD5</th><td><code>{{ results.hashes.md5 }}</code></td></tr>
+  </table>
+
+  <h3>YARA</h3>
+  {% if results.yara.enabled %}
+    {% if results.yara.matches %}
+      <ul>
+        {% for m in results.yara.matches %}
+          <li><strong>{{ m.rule }}</strong> ({{ m.namespace }})
+            {% if m.tags %}<em>tags: {{ m.tags|join(', ') }}</em>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No YARA matches.</p>
+    {% endif %}
+  {% else %}
+    <p>YARA disabled or not installed.</p>
+  {% endif %}
+
+  <h3>ClamAV</h3>
+  {% if results.clamav.available %}
+    {% if results.clamav.infected is none %}
+      <p>Scan error or unknown result.</p>
+    {% elif results.clamav.infected %}
+      <p class="danger">Infected (per ClamAV)</p>
+      <pre>{{ results.clamav.raw }}</pre>
+    {% else %}
+      <p class="success">No infection found (per ClamAV)</p>
+    {% endif %}
+  {% else %}
+    <p>ClamAV not available.</p>
+  {% endif %}
+
+  <h3>VirusTotal</h3>
+  {% if results.virustotal.enabled %}
+    {% if results.virustotal.found %}
+      {% set stats = results.virustotal.stats %}
+      <p>
+        Harmless: {{ stats.harmless or 0 }} |
+        Undetected: {{ stats.undetected or 0 }} |
+        Suspicious: {{ stats.suspicious or 0 }} |
+        Malicious: {{ stats.malicious or 0 }}
+      </p>
+      <p><a href="{{ results.virustotal.permalink }}" target="_blank" rel="noopener">Open in VirusTotal</a></p>
+    {% elif results.virustotal.found is defined and not results.virustotal.found %}
+      <p>No VirusTotal record for this hash.</p>
+    {% else %}
+      <p>VirusTotal error: {{ results.virustotal.error }}</p>
+    {% endif %}
+  {% else %}
+    <p>VirusTotal disabled. Set <code>VIRUSTOTAL_API_KEY</code> in .env to enable.</p>
+  {% endif %}
+
+  <p><a href="{{ url_for('main.index') }}">Scan another file</a></p>
+</section>
+{% endblock %}
+
+
