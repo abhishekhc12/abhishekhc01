@@ -1,0 +1,11 @@
+Flask==3.0.3
+Werkzeug==3.0.4
+Jinja2==3.1.4
+itsdangerous==2.2.0
+click==8.1.7
+python-dotenv==1.0.1
+requests==2.32.3
+python-magic-bin==0.4.14
+# Optional: YARA scanning
+yara-python==4.5.1
+
